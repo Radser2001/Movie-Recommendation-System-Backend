@@ -119,7 +119,7 @@ new_df[new_df['title'] == 'Spider-Man'].index[0]
 
 from sklearn.metrics import confusion_matrix
 
-recommended_movies = []
+
 def recommend(movie_name):
 
 
@@ -144,7 +144,7 @@ def recommend(movie_name):
     sorted_similar_movies = sorted(similarity_score, key=lambda x: x[1], reverse=True)
 
     print('Movies suggested for you: \n')
-   
+    recommended_movies = []
     for i, movie in enumerate(sorted_similar_movies):
         index = movie[0]
         title_from_index = movies[movies.index == index]['title'].values
