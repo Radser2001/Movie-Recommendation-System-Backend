@@ -5,10 +5,9 @@ import difflib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 #data colllection and preprocessing
-movies = pd.read_csv('D:\\Y3S1\\Information Retrieval and Web Analytics - IT3041\\Projects\\Movie-Recommendation-System-Backend\\dataset\\tmdb_5000_movies.csv')
-credits = pd.read_csv('D:\\Y3S1\\Information Retrieval and Web Analytics - IT3041\\Projects\\Movie-Recommendation-System-Backend\\dataset\\tmdb_5000_credits.csv')
-ratings = pd.read_csv('D:\\Y3S1\\Information Retrieval and Web Analytics - IT3041\\Projects\\Movie-Recommendation-System-Backend\\dataset\\ratings.csv')
-
+movies = pd.read_csv('D:\\games\\Movie-Recommendation-System-Backend\\datasets\\tmdb_5000_movies.csv')
+credits = pd.read_csv('D:\\games\\Movie-Recommendation-System-Backend\\datasets\\tmdb_5000_credits.csv')
+ratings = pd.read_csv('D:\\games\\Movie-Recommendation-System-Backend\\datasets\\ratings.csv')
 
 # merging the datasets
 movies = movies.merge(credits, on = 'title')

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from Movie_Recommendation_Search_Results import recommend
-from Movie_Recommendation_Genres import recommend_movies
+from Movie_Recommendation_Genres import get_recommendations
 import pymongo
 from flask_cors import CORS
 
@@ -13,8 +13,8 @@ client = pymongo.MongoClient(connection_string)
 
 # Access your database and collection
 db = client.MRS
-collection = db.Movies
-
+collection = db.Movie
+genre_collection = db.Genre
 
 def retrieve_movie_details(movie_title):
     # Search the MongoDB collection for the movie by title
@@ -24,13 +24,21 @@ def retrieve_movie_details(movie_title):
         movie_details["_id"] = str(movie_details["_id"])
     return movie_details
 
-@app.route("/recommended_movies/<int:user_id>", methods=["GET"])
-def Genre_Based_Recommended_Movies(user_id):
-    # The user_id is obtained from the URL path as an integer
+def retrieve_genre_list(email):
+    # Search the genre collection for the genres list by email
+    genres_list = genre_collection.find_one({"user_id": email})['genre']
 
-    movie_list = recommend_movies(user_id)  # Get recommended movies
+    return genres_list
+
+@app.route("/recommended_movies/<string:email>", methods=["GET"])
+def Genre_Based_Recommended_Movies(email):
+    # The user_id is obtained from the URL path as an integer
+    genre_list=retrieve_genre_list(email)
+    movie_list = get_recommendations(genre_list)  # Get recommended movies
 
     recommended_movies_with_details = []
+
+    print(movie_list)
 
     for title in movie_list:
         # Extract the movie title from the DataFrame
@@ -42,11 +50,13 @@ def Genre_Based_Recommended_Movies(user_id):
         if movie_details:
             recommended_movies_with_details.append(movie_details)
 
+    print(recommended_movies_with_details)
+
     return jsonify({"recommended_movies_genre": recommended_movies_with_details})
 
-@app.route("/recommended_movies/<string:movie_name>", methods=["GET"])
+@app.route("/search_based_recommended_movies/<string:movie_name>", methods=["GET"])
 def Search_Based_Recommended_Movies(movie_name):
-    max_recommendations = 10  # Define the maximum number of recommended movies
+    max_recommendations = 15  # Define the maximum number of recommended movies
 
     movie_list = recommend(movie_name)  # Get recommended movies
     print(movie_list)
@@ -54,7 +64,7 @@ def Search_Based_Recommended_Movies(movie_name):
     if len(movie_list) > max_recommendations:
         movie_list = movie_list[:max_recommendations]
 
-    recommended_movies_with_details = []
+    search_based = []
 
     for title in movie_list:
         # Extract the movie title from the DataFrame
@@ -64,9 +74,9 @@ def Search_Based_Recommended_Movies(movie_name):
         movie_details = retrieve_movie_details(movie_title)
 
         if movie_details:
-            recommended_movies_with_details.append(movie_details)
-
-    return jsonify({"recommended_movies_search": recommended_movies_with_details})
+            search_based.append(movie_details)
+    # print(search_based)
+    return jsonify({"recommended_movies_search": search_based})
 
 
 

@@ -1,68 +1,43 @@
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import math 
 
 # Load the data
-movies = pd.read_csv('D:\\Y3S1\\Information Retrieval and Web Analytics - IT3041\\Projects\\Movie-Recommendation-System-Backend\\dataset\\tmdb_5000_movies.csv')
-credits = pd.read_csv('D:\\Y3S1\\Information Retrieval and Web Analytics - IT3041\\Projects\\Movie-Recommendation-System-Backend\\dataset\\tmdb_5000_credits.csv')
-ratings = pd.read_csv('D:\\Y3S1\\Information Retrieval and Web Analytics - IT3041\\Projects\\Movie-Recommendation-System-Backend\\dataset\\ratings.csv')
+movies = pd.read_csv("D:\\tmdb_5000_movies.csv")
 
+# Clean the genre column
+movies['genres'] = movies['genres'].fillna('')  # Fill missing values with empty string
+movies['genres'] = movies['genres'].apply(lambda x: ' '.join(sorted(x.split('|'))))  # Sort and join genre names
 
-# Merge the dataframes
-credits = credits.merge(ratings, on='movie_id')
-movies = movies.merge(credits, on='title')
+# Create a TF-IDF vectorizer
+tfidf = TfidfVectorizer(stop_words='english')
 
+# Fit and transform the genre column
+tfidf_matrix = tfidf.fit_transform(movies['genres'])
 
-# Create a Count Vectorizer for movie genres
-cv = CountVectorizer()
-genre_matrix = cv.fit_transform(movies['genres'])
+# Compute the cosine similarity matrix
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# Create a user-movie rating matrix
-rating_matrix = movies.pivot_table(index='userId', columns='title', values='rating').fillna(0)
-
-# Calculate cosine similarity between movies based on user ratings
-cosine_sim = cosine_similarity(rating_matrix)
-
-# Create a mapping of movie titles to indices
-movie_to_idx = {title: i for i, title in enumerate(rating_matrix.columns)}
 
 # Function to recommend movies
-def recommend_movies(user_id, cosine_sim=cosine_sim):
-    # Get the user's ratings
-    user_ratings = rating_matrix.loc[user_id]
+def get_recommendations(genres, cosine_sim=cosine_sim, movies=movies):
+    # Filter movies based on selected genres
+    selected_movies = movies[movies['genres'].str.contains('|'.join(genres))]
 
-    # Initialize an empty list to store movie recommendations
-    recommendations = set()
+    # Get the indices of the selected movies
+    selected_indices = selected_movies.index
 
-    # Iterate over the user's rated movies
-    for movie_title, user_rating in user_ratings.iteritems():
-        if user_rating > 0:
-            
-            # Convert the rating to its ceiling value
-            user_rating = math.ceil(user_rating)
-            
-            # Find movies similar to the user-rated movie
-            movie_idx = movie_to_idx.get(movie_title)
-            if movie_idx is not None:
-                similar_movies = list(enumerate(cosine_sim[movie_idx]))
+    # Compute the average similarity scores for the selected movies
+    avg_scores = cosine_sim[selected_indices].mean(axis=0)
 
-                # Sort the list of similar movies by similarity score
-                similar_movies = sorted(similar_movies, key=lambda x: x[1], reverse=True)
+    # Sort the movies based on average similarity scores
+    sorted_indices = avg_scores.argsort()[::-1]
 
-                # Extract the movie indices (excluding the movie itself)
-                similar_movie_indices = [i for i, _ in similar_movies if i != movie_idx]
+    # Get the top 5 most similar movies
+    top_movies_indices = sorted_indices[:5]
+    top_movies = movies['title'].iloc[top_movies_indices].tolist()
 
-                # Recommend the top 10 similar movies
-                top_similar_movies = similar_movie_indices[:10]
+    return top_movies
 
-                # Add the recommended movies to the set
-                recommendations.update(top_similar_movies)
 
-    # Filter out-of-bounds indices and return the titles of the recommended movies
-    valid_recommendations = [rating_matrix.columns[i] for i in recommendations if i < len(rating_matrix.columns)]
-    return valid_recommendations
-
-# Calling the recommend_movies() function for user ID 1
-recommended_movies = recommend_movies(2)
 
