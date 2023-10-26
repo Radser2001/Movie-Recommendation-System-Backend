@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Load the data
-movies = pd.read_csv("D:\\tmdb_5000_movies.csv")
+movies = pd.read_csv("./datasets/tmdb_5000_movies.csv")
 
 # Clean the genre column
 movies['genres'] = movies['genres'].fillna('')  # Fill missing values with empty string
